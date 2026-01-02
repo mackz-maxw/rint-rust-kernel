@@ -1,0 +1,14 @@
+[build]
+# 缺省目标可以在命令行覆盖，例如：--target x86_64-unknown-none
+target = "x86_64-unknown-none"
+
+[target.x86_64-unknown-none]
+linker = "ld.lld"
+rustflags = ["-C", "link-arg=-nostartfiles"]
+
+[target.riscv64gc-unknown-none-elf]
+linker = "ld.lld"
+rustflags = ["-C", "link-arg=-nostartfiles"]
+
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
