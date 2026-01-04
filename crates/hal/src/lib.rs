@@ -1,4 +1,4 @@
-#![no_std]
+#![no_std] // 内核环境下不使用标准库
 
 pub mod prelude {
     pub use crate::{Timer, IrqCtl, ContextSwitch, Hal};
@@ -9,6 +9,7 @@ pub trait Timer {
     fn schedule_tick_in(&self, ms: u64);
 }
 
+// 中断控制接口
 pub trait IrqCtl {
     fn enable_irq(&self, irq: u32);
     fn disable_irq(&self, irq: u32);
