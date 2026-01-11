@@ -1,3 +1,15 @@
 [workspace]
 members = ["kernel"]
 resolver = "2"
+
+[profile.dev]
+panic = "abort"
+lto = false
+opt-level = 0
+codegen-units = 16
+
+[profile.release]
+panic = "abort"
+lto = "thin"
+opt-level = "z"
+codegen-units = 1
