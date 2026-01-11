@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-and-boot:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 xorriso make nasm gcc
+
+      - name: Setup Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src, llvm-tools-preview
+
+      - name: Build kernel & ISO
+        run: |
+          bash scripts/make_iso.sh
+
+      - name: Boot in QEMU (headless) and check log
+        run: |
+          set -e
+          timeout 20s bash -c 'qemu-system-x86_64 -machine q35 -m 256M -serial stdio -display none -cdrom build/rint-m1.iso -no-reboot | tee qemu.log || true'
+          grep -q "RINT KERNEL: init OK" qemu.log
