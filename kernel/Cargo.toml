@@ -10,7 +10,3 @@ x86_64 = "0.14"
 spin = "0.9"
 uart_16550 = "0.2"
 volatile = "0.5"
-
-[[bin]]
-name = "rint-kernel"
-path = "src/lib.rs"
