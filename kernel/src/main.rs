@@ -70,7 +70,6 @@ fn banner() {
 global_asm!(
 r#"
     .section .stivale2hdr, "a"
-    .align 8
     .global stivale2_hdr
 stivale2_hdr:
     .quad kstart        # entry point
