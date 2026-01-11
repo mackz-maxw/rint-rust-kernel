@@ -1,11 +1,3 @@
 [workspace]
-members = [
-    "kernel",
-    "crates/hal",
-    "crates/scheduler",
-    "crates/metrics",
-    "crates/sched-sim",
-    "arch-x86_64",
-    "arch-riscv64", 
-]
+members = ["kernel"]
 resolver = "2"

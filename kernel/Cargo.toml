@@ -1,6 +1,28 @@
 [package]
-name = "kernel"
+name = "rint-kernel"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["mackz-maxw <github.com/mackz-maxw>"]
 
 [dependencies]
+x86_64 = "0.14"
+spin = "0.9"
+uart_16550 = "0.2"
+volatile = "0.5"
+
+[profile.dev]
+panic = "abort"
+lto = false
+opt-level = 0
+codegen-units = 16
+
+[profile.release]
+panic = "abort"
+lto = "thin"
+opt-level = "z"
+codegen-units = 1
+
+[lib]
+name = "rint_kernel"
+crate-type = ["staticlib"]

@@ -3,3 +3,6 @@
 **/*.log
 .vscode/
 .idea/
+/build
+*.iso
+qemu.log
