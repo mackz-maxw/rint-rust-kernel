@@ -1,0 +1,4 @@
+[toolchain]
+channel = "nightly" # 切换到实验性工具链
+components = ["rust-src", "llvm-tools-preview"]
+profile = "minimal"

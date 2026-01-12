@@ -14,7 +14,7 @@
 <details>
 <summary>
 
-### M0 - 含创建基本仓库结构与能在本机/WSL 运行的 sched-sim 原型文件
+### M0 - 创建基本仓库结构
 </summary>
 
 一：需要的工具
@@ -90,14 +90,46 @@
 
 </details>
 
+
 <details>
 <summary>
 
-### M1 - （工作中）
+### M1 - 引导程序（bootloader）
 </summary>
+
+目标：x86_64 • 引导：Limine • 许可证：Apache-2.0 • 开发环境：WSL2 Ubuntu 22
+
+可用功能
+- 通过引导入口 `_start` 和临时栈实现最小的 long-mode 内核入口
+- 在 COM1 上的串口日志（在 QEMU 中使用 `-serial stdio` 可以看到日志）
+- Panic 处理器和基本的引导横幅
+- Limine ISO 构建脚本和 QEMU 启动脚本
+- CI 会构建 ISO 并验证启动日志包含 `RINT KERNEL: init OK`
+
+先决条件（WSL2 Ubuntu 22）
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential qemu-system-x86 xorriso make nasm gcc
+```
+下载配置的nightly工具链 `rustup toolchain install`
+
+本地构建与运行
+```bash
+bash scripts/make_iso.sh
+bash scripts/qemu.sh
+```
+
+预期输出：
+```
+==============================
+ RINT Rust Microkernel (M1) 
+ Arch: x86_64 | Boot: Limine | License: Apache-2.0 
+==============================
+RINT KERNEL: init OK
+```
 </details>
 
-</details>
+
 
 <details>
 <summary>

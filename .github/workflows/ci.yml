@@ -1,0 +1,39 @@
+name: CI # 工作流名称
+
+# push到main或者有PR时触发
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-and-boot:
+    runs-on: ubuntu-22.04 # 在Ubuntu 22.04环境下运行
+    steps:
+      # 签出到运行环境
+      - name: Checkout 
+        uses: actions/checkout@v4
+
+      # xorriso-制作ISO镜像; make, nasm, gcc-构建LimineOS; 
+      # qemu-system-x86-运行LimineOS
+      - name: Install deps 
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 xorriso make nasm gcc
+
+      - name: Setup Rust (nightly) (actions-rs)
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          components: rust-src, llvm-tools-preview
+          profile: minimal
+
+      - name: Build kernel & ISO
+        run: |
+          bash scripts/make_iso.sh
+
+      - name: Boot in QEMU (headless) and check log
+        run: |
+          set -e
+          timeout 20s bash -c 'qemu-system-x86_64 -machine q35 -m 256M -serial stdio -display none -cdrom build/rint-m1.iso -no-reboot | tee qemu.log || true'
+          grep -q "RINT KERNEL: init OK" qemu.log

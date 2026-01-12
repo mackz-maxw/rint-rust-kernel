@@ -1,11 +1,11 @@
 [workspace]
 members = [
     "kernel",
-    "crates/hal",
-    "crates/scheduler",
-    "crates/metrics",
-    "crates/sched-sim",
-    "arch-x86_64",
-    "arch-riscv64", 
+    # "crates/hal",
+    # "crates/scheduler",
+    # "crates/metrics",
+    # "crates/sched-sim",
+    # "arch-x86_64",
+    # "arch-riscv64", 
 ]
 resolver = "2"
