@@ -3,8 +3,8 @@
 
 use core::arch::global_asm;
 
-// Minimal bootstrap: set a temporary stack and call kstart() defined in lib.rs.
-// Limine loads the kernel in long mode; we rely on its environment.
+// 以汇编形式把最小的临时栈嵌入到 ELF 中，从而让 Limine 找到入口并使用该栈
+// 然后把控制权交给 Rust 中定义的 kstart
 global_asm!(
 r#"
     .section .text._start

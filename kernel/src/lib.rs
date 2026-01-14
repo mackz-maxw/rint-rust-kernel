@@ -18,7 +18,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     }
 }
 
-#[unsafe(no_mangle)]
+#[unsafe(no_mangle)] // 禁止编译器对该函数进行名称改编，确保最终 ELF 里的符号名就是 kstart
 extern "C" fn kstart() -> ! {
     init_serial();
     banner();
@@ -52,8 +52,8 @@ fn banner() {
     kprintln!("==============================");
 }
 
-#[doc(hidden)]
-pub fn kprint(args: core::fmt::Arguments) {
+#[doc(hidden)] //在生成文档（rustdoc）时不出现在公开 API 文档里，表示它是内部实现，用户应通过宏 kprintln! 间接调用
+pub fn kprint(args: core::fmt::Arguments) { // 生成一个封装好的格式化参数对象
     let mut lock = SERIAL1.lock();
     if let Some(sp) = lock.as_mut() {
         let _ = sp.write_fmt(args);
@@ -63,7 +63,8 @@ pub fn kprint(args: core::fmt::Arguments) {
 
 #[macro_export]
 macro_rules! kprintln {
-    ($($arg:tt)*) => {
+    // 接受任意格式化参数列表，等同 println! 的可变参数匹配方式
+    ($($arg:tt)*) => { // $arg:tt：匹配任意“token tree”片段；$( … )*：表示重复零次或多次
         $crate::kprint(core::format_args!($($arg)*))
     };
 }
