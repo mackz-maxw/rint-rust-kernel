@@ -3,6 +3,7 @@
 // #![feature(asm_const)] 
 
 use core::fmt::Write;
+use core::ptr;
 use spin::Mutex;
 use uart_16550::SerialPort;
 use x86_64::instructions::{hlt, interrupts};
@@ -19,7 +20,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
 }
 
 #[unsafe(no_mangle)] // 禁止编译器对该函数进行名称改编，确保最终 ELF 里的符号名就是 kstart
-extern "C" fn kstart() -> ! {
+pub extern "C" fn kstart() -> ! {
     init_serial();
     banner();
 
@@ -59,6 +60,38 @@ pub fn kprint(args: core::fmt::Arguments) { // 生成一个封装好的格式化
         let _ = sp.write_fmt(args);
         let _ = sp.write_str("\n");
     }
+}
+
+// --- Minimal C ABI shims ---
+// These satisfy symbols the core/alloc runtime expects when no libc is present.
+#[unsafe(no_mangle)]
+pub extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
+    unsafe{ptr::copy_nonoverlapping(src, dest, n);}
+    dest
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn memmove(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
+    unsafe { ptr::copy(src, dest, n); }
+    dest
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn memset(dest: *mut u8, value: i32, n: usize) -> *mut u8 {
+    unsafe { ptr::write_bytes(dest, value as u8, n); }
+    dest
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn memcmp(a: *const u8, b: *const u8, n: usize) -> i32 {
+    for i in 0..n {
+        let va = unsafe { *a.add(i) };
+        let vb = unsafe { *b.add(i) };
+        if va != vb {
+            return va as i32 - vb as i32;
+        }
+    }
+    0
 }
 
 #[macro_export]

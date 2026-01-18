@@ -20,10 +20,14 @@ if ! command -v qemu-system-x86_64 >/dev/null; then
   echo "Warning: QEMU not found (sudo apt-get install qemu-system-x86). ISO build will continue without QEMU." >&2
 fi
 
-# 获取 Limine binary release 并运行 configure
+# 获取 Limine binary release；若 CLI 不存在则执行 make（binary 分支不提供 ./configure）
 if [ ! -d "${LIMINE_DIR}/.git" ]; then
   git clone https://codeberg.org/Limine/Limine.git --branch=v10.6.2-binary --depth=1 "${LIMINE_DIR}"
-  (cd "${LIMINE_DIR}" && ./configure)
+fi
+
+# 构建 CLI：优先检查根目录 limine，其次 bin/limine
+if [ ! -x "${LIMINE_DIR}/limine" ] && [ ! -x "${LIMINE_DIR}/bin/limine" ]; then
+  (cd "${LIMINE_DIR}" && make)
 fi
 
 # 解析 Limine 产物路径（bin 或 share）
@@ -90,10 +94,12 @@ xorriso -as mkisofs -R -r -J \
 LIMINE_CLI=""
 if [ -x "${LIMINE_DIR}/bin/limine" ]; then
   LIMINE_CLI="${LIMINE_DIR}/bin/limine"
+elif [ -x "${LIMINE_DIR}/limine" ]; then
+  LIMINE_CLI="${LIMINE_DIR}/limine"
 elif command -v limine >/dev/null; then
   LIMINE_CLI="$(command -v limine)"
 else
-  echo "Limine CLI not found. Ensure ./configure produced bin/limine or install Limine to PATH." >&2
+  echo "Limine CLI not found. Run 'make' in build/limine or install Limine to PATH." >&2
   exit 1
 fi
 

@@ -109,7 +109,7 @@
 先决条件（WSL2 Ubuntu 22）
 ```bash
 sudo apt-get update
-sudo apt-get install -y build-essential qemu-system-x86 xorriso make nasm gcc
+sudo apt-get install -y build-essential qemu-system-x86 xorriso nasm mtools git curl unzip
 ```
 下载配置的nightly工具链 `rustup toolchain install`
 

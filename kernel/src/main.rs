@@ -1,5 +1,8 @@
 #![no_std]
 #![no_main]
+#![allow(unused_extern_crates)]
+
+extern crate rint_kernel;
 
 use core::arch::global_asm;
 
@@ -10,13 +13,13 @@ r#"
     .section .text._start
     .global _start
 _start:
-    leaq stack_top(%rip), %rsp
+    lea rsp, [rip + stack_top]
     call kstart
 
 1:  hlt
     jmp 1b
 
-    .section .bss
+    .section .bss.stack, "aw", @nobits
     .align 16
     .global __bootstrap_stack
 __bootstrap_stack:
@@ -24,6 +27,5 @@ __bootstrap_stack:
 
     .global stack_top
 stack_top:
-    .quad __bootstrap_stack + 0x8000
 "#
 );

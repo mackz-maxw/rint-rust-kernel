@@ -25,4 +25,4 @@ codegen-units = 1
 
 [lib]
 name = "rint_kernel"
-crate-type = ["staticlib"]
+crate-type = ["rlib", "staticlib"]
