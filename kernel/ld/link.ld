@@ -1,37 +1,39 @@
-ENTRY(_start) /* 告诉链接器程序入口符号是 _start（在 kernel/src/main.rs 的汇编里） */
+/* 高半区虚拟基址与物理加载基址 */
+KERNEL_VMA = 0xFFFFFFFF80200000; /* 高半区虚拟地址（示例） */
+KERNEL_LMA = 0x00200000;         /* 物理加载地址 2MiB */
 
-KERNEL_PHYS_BASE = 0x200000;         /* 物理装载地址（2 MiB 对齐，方便跳过固件/引导器区域） */
-KERNEL_VIRT_BASE = 0xffffffff80000000; /* 高半区映射基址；Limine 不允许低半区 PHDRs */
+ENTRY(_start)
 
-PHDRS {
-  text   PT_LOAD FLAGS(0x5); /* 可加载、可读可执行：代码段 */
-  rodata PT_LOAD FLAGS(0x4); /* 可加载、只读：常量段 */
-  data   PT_LOAD FLAGS(0x6); /* 可加载、可读可写：数据和 bss 段 */
+PHDRS
+{
+  text   PT_LOAD FLAGS(5); /* R X */
+  rodata PT_LOAD FLAGS(4); /* R */
+  data   PT_LOAD FLAGS(6); /* R W */
 }
 
 SECTIONS
 {
-  /* SECTIONS 中段的出现顺序就是布局顺序。
-    先 .text，其起始偏移为 0（对齐到 0x1000）；
-    .rodata 紧随 .text 末尾并按 0x1000 对齐；
-    .data 紧随 .rodata；.bss 紧随 .data */
-  /* 将“虚拟地址基准”（VMA）放到高半区；实际文件装载的物理地址（LMA）仍在 2MiB */
-  . = KERNEL_VIRT_BASE;
+  /* 把链接地址（VMA）移动到高半区 */
+  . = KERNEL_VMA;
 
-  .text : ALIGN(0x1000) {
+  .text : ALIGN(16)
+  {
     KEEP(*(.text._start))
     *(.text .text.*)
-  } :text AT(KERNEL_PHYS_BASE + (ADDR(.text) - KERNEL_VIRT_BASE))
+  } :text AT(ADDR(.text) - KERNEL_VMA + KERNEL_LMA)
 
-  .rodata : ALIGN(0x1000) {
+  .rodata : ALIGN(16)
+  {
     *(.rodata .rodata.*)
-  } :rodata AT(KERNEL_PHYS_BASE + (ADDR(.rodata) - KERNEL_VIRT_BASE))
+  } :rodata AT(ADDR(.rodata) - KERNEL_VMA + KERNEL_LMA)
 
-  .data : ALIGN(0x1000) {
+  .data : ALIGN(16)
+  {
     *(.data .data.*)
-  } :data AT(KERNEL_PHYS_BASE + (ADDR(.data) - KERNEL_VIRT_BASE))
+  } :data AT(ADDR(.data) - KERNEL_VMA + KERNEL_LMA)
 
-  .bss : ALIGN(0x1000) {
+  .bss : ALIGN(16)
+  {
     *(.bss .bss.* COMMON)
-  } :data AT(KERNEL_PHYS_BASE + (ADDR(.bss) - KERNEL_VIRT_BASE))
+  } :data AT(ADDR(.bss) - KERNEL_VMA + KERNEL_LMA)
 }

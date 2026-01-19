@@ -127,6 +127,26 @@ bash scripts/qemu.sh
 ==============================
 RINT KERNEL: init OK
 ```
+
+### debug记录
+
+#### 启动内核iso报错：panic:lower half PHDRs not allowed
+找到ELF文件：
+```bash
+$ file build/iso/boot/kernel.bin
+build/iso/boot/kernel.bin: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, with debug_info, not stripped
+```
+查看虚拟地址：
+```bash
+$ readelf -W -l build/iso/boot/kernel.bin
+```
+PHDR在低位
+```bash
+Program Headers:
+  Type           Offset   VirtAddr           PhysAddr           FileSiz  MemSiz   Flg Align
+  PHDR           0x000040 0x0000000000200040 ......
+```
+更改link.ld使得其在高位
 </details>
 
 
