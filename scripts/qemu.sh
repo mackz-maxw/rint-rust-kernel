@@ -13,7 +13,7 @@ qemu-system-x86_64 \
   -machine q35 \
   -m 256M \
   -serial stdio \
-  -display none \
+  -display sdl \
   -cdrom "${ISO}" \
   -no-reboot \
   -d guest_errors
