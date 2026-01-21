@@ -136,8 +136,8 @@ PHDRS
 ```ld
 .text : ALIGN(16)
 {
-  KEEP(*(.text._start))    // 保留入口函数
-  *(.text .text.*)         // 所有代码
+  KEEP(*(.text._start))    /* 保留入口函数 */
+  *(.text .text.*)         /* 所有代码 */
 } :text AT(ADDR(.text) - KERNEL_VMA + KERNEL_LMA)
 ```
 
@@ -163,7 +163,7 @@ PHDRS
 ```ld
 .rodata : ALIGN(16)
 {
-  *(.rodata .rodata.*)     // 字符串常量、常量数组等
+  *(.rodata .rodata.*)     /* 字符串常量、常量数组等 */
 } :rodata AT(ADDR(.rodata) - KERNEL_VMA + KERNEL_LMA)
 ```
 
@@ -181,7 +181,7 @@ PHDRS
 ```ld
 .data : ALIGN(16)
 {
-  *(.data .data.*)         // 全局变量、静态变量等
+  *(.data .data.*)         /* 全局变量、静态变量等 */
 } :data AT(ADDR(.data) - KERNEL_VMA + KERNEL_LMA)
 ```
 
@@ -198,7 +198,7 @@ PHDRS
 ```ld
 .bss : ALIGN(16)
 {
-  *(.bss .bss.* COMMON)    // 未初始化的全局变量
+  *(.bss .bss.* COMMON)    /* 未初始化的全局变量 */
 } :data AT(ADDR(.bss) - KERNEL_VMA + KERNEL_LMA)
 ```
 
