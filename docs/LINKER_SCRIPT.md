@@ -8,16 +8,16 @@
 
 ```ld
 /* 高半区虚拟基址与物理加载基址 */
-KERNEL_VMA = 0xFFFFFFFF80200000; /* 高半区虚拟地址（示例） */
+KERNEL_VMA = 0xFFFFFFFF80200000; /* 高半区虚拟地址 */
 KERNEL_LMA = 0x00200000;         /* 物理加载地址 2MiB */
 
 ENTRY(_start)
 
 PHDRS
 {
-  text   PT_LOAD FLAGS(5); /* R X */
-  rodata PT_LOAD FLAGS(4); /* R */
-  data   PT_LOAD FLAGS(6); /* R W */
+  text   PT_LOAD FLAGS(5); /* R X - FLAGS: 1(R) + 4(X) = 5 */
+  rodata PT_LOAD FLAGS(4); /* R   - FLAGS: 4(R) = 4 */
+  data   PT_LOAD FLAGS(6); /* R W - FLAGS: 2(W) + 4(R) = 6 */
 }
 
 SECTIONS
@@ -372,10 +372,10 @@ Program Headers:
 **解决方法：**
 ```ld
 /* 错误写法 */
-. = 0x100000;  // 低地址
+. = 0x100000;  /* 低地址 */
 
 /* 正确写法 */
-. = 0xFFFFFFFF80200000;  // 高地址
+. = 0xFFFFFFFF80200000;  /* 高地址 */
 ```
 
 ### 问题 2: 启动后立即崩溃
