@@ -65,7 +65,9 @@ else
 fi
 
 # 编译内核（按需改为 --release 并同步 KERNEL_BIN）
-cargo +nightly build -Z build-std=core,compiler_builtins,alloc --target kernel/x86_64-rint.json
+cd kernel
+cargo +nightly build -Z build-std=core,compiler_builtins,alloc --target x86_64-rint.json
+cd ..
 
 # 准备 ISO 内容（对齐 USAGE.md）
 cp "${KERNEL_BIN}" "${ISO_DIR}/boot/kernel.bin"

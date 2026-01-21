@@ -1,7 +1,7 @@
 [build]
 # 缺省目标可以在命令行覆盖，例如：--target x86_64-unknown-none
 # !!!注意：若要执行用户态程序，需注释下一行的默认target, 因为裸机目标不带例如std的标准库，会导致编译错误
-target = "x86_64-unknown-none"
+# target = "x86_64-unknown-none"
 
 [target.x86_64-unknown-none]
 rustflags = [
