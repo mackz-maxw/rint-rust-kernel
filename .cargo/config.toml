@@ -14,11 +14,17 @@ rustflags = [
 linker = "ld.lld"
 rustflags = ["-C", "link-arg=-nostartfiles"]
 
+# Custom target for x86_64 kernel with higher-half memory layout
+# Used when building with --target kernel/x86_64-rint.json
 [target.x86_64-rint]
 rustflags = [
+  # Linker script for higher-half kernel (0xFFFFFFFF80000000)
   "-C", "link-arg=-Tkernel/ld/link.ld",
+  # Static relocation model for bare-metal kernel
   "-C", "relocation-model=static",
+  # Kernel code model required for high memory addresses (> 4GB)
   "-C", "code-model=kernel",
+  # Disable red zone for interrupt safety
   "-C", "no-redzone=yes",
 ]
 
