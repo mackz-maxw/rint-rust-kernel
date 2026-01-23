@@ -146,7 +146,8 @@ Program Headers:
   Type           Offset   VirtAddr           PhysAddr           FileSiz  MemSiz   Flg Align
   PHDR           0x000040 0x0000000000200040 ......
 ```
-更改link.ld使得其在高位
+改来改去，本来以为是`link.ld`写错了。最终还是因为觉得俩config看着难受，把kernel文件夹下的config删了，在项目根下的`.cargo/config.toml`配置目标，歪打正着改对了
+
 </details>
 
 
