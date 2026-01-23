@@ -14,10 +14,27 @@ rustflags = [
 linker = "ld.lld"
 rustflags = ["-C", "link-arg=-nostartfiles"]
 
+[target.x86_64-rint]
+rustflags = [
+  "-C", "link-arg=-Tkernel/ld/link.ld",
+  "-C", "relocation-model=static",
+  "-C", "code-model=kernel",
+  "-C", "no-redzone=yes",
+]
+
+[target."x86_64-rint.json"]
+rustflags = [
+  "-C", "link-arg=-Tkernel/ld/link.ld",
+  "-C", "relocation-model=static",
+  "-C", "code-model=kernel",
+  "-C", "no-redzone=yes",
+]
+
 [target."kernel/x86_64-rint.json"]
 rustflags = [
   "-C", "link-arg=-Tkernel/ld/link.ld",
   "-C", "relocation-model=static",
+  "-C", "code-model=kernel",
   "-C", "no-redzone=yes",
 ]
 
