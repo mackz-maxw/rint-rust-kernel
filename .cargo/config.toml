@@ -15,7 +15,7 @@ linker = "ld.lld"
 rustflags = ["-C", "link-arg=-nostartfiles"]
 
 # Custom target for x86_64 kernel with higher-half memory layout
-# Used when building with --target kernel/x86_64-rint.json
+# Used when building with --target x86_64-rint.json
 [target.x86_64-rint]
 rustflags = [
   # Linker script for higher-half kernel (0xFFFFFFFF80000000)
