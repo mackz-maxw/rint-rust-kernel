@@ -14,5 +14,16 @@ rustflags = [
 linker = "ld.lld"
 rustflags = ["-C", "link-arg=-nostartfiles"]
 
+[target."kernel/x86_64-rint.json"]
+rustflags = [
+  "-C", "link-arg=-Tkernel/ld/link.ld",
+  "-C", "relocation-model=static",
+  "-C", "no-redzone=yes",
+]
+
 [target.aarch64-unknown-linux-gnu]
 linker = "aarch64-linux-gnu-gcc"
+
+[unstable]
+build-std = ["core", "compiler_builtins", "alloc"]
+build-std-features = ["compiler-builtins-mem"]
