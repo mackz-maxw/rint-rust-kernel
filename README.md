@@ -151,6 +151,11 @@ Program Headers:
 </details>
 
 
+<details>
+<summary>
+</summary>
+</details>
+
 
 <details>
 <summary>
@@ -163,30 +168,6 @@ Program Headers:
 - **Linux ABI 兼容子集**：在不牺牲微内核/模块化原则的前提下，逐步实现一套面向“无界面、服务型”应用的 Linux ABI 子集，使常见的 Linux 用户态程序（特别是使用标准 C 接口或 Rust/musl 静态链接的服务）可以在内核之上运行或通过兼容层运行。
 - **嵌入式 AI 服务场景**：面向嵌入式AI：注重稳定的I/O、网络栈、推理引擎/推理服务运行环境，对 GUI 要求低，对可配置度和可观测性要求高。
 - 实现路径上，优先保证 **调度/时序/metrics 可靠**，在此基础上引入 **Linux ABI 兼容层 + AI 服务运行环境**，而不是从一开始就覆盖完整桌面/服务器级 Linux ABI。
-
-## M1 – 裸机内核最小可启动（QEMU x86_64）
-
-**目标**：让 kernel 在 x86_64-unknown-none 上通过 QEMU 启动，跑到 kernel_main 并有可观测输出（串口/屏幕）。
-
-**主要工作**
-
-- 引导/启动链路  
-  - 为 kernel 增加启动入口与 linker script，或集成 bootloader crate。  
-  - 衔接 `_start` 到 `kernel::kernel_main`。
-
-- 最小平台层  
-  - 在 `arch-x86_64` 初步实现 IDT/GDT、基本中断屏蔽。  
-  - 从 arch-x86_64 装配一个真正的 `Hal<T, I, C>` 替换 `hal::global` 的 dummy（可以先用 stub timer，但由 arch 提供）。
-
-- QEMU 脚本  
-  - 填充 scripts/qemu-run-x86_64.sh，使用内核镜像启动 QEMU，串口输出 “hello kernel / epoch …” 等。
-
-**验收标准**
-
-- `cargo build -p kernel --target x86_64-unknown-none` 成功。  
-- scripts/qemu-run-x86_64.sh 能在 QEMU 中看到来自内核的输出（如 “kernel booted”）。
-
----
 
 ## M2 – HAL 抽象落地 & 定时器/中断驱动
 
