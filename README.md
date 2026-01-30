@@ -153,7 +153,324 @@ Program Headers:
 
 <details>
 <summary>
+
+### M2 - HAL和调度
 </summary>
+
+根据README中的规划,M2阶段的目标是:**让HAL真正驱动时钟中断和基本IRQ,支持调度器依赖的Timer/IrqCtl能力**。
+
+### 🎯 M2 核心任务
+
+#### 1️⃣ **实现x86_64架构层的HAL**
+
+**需要新增/修改的文件:**
+
+##### **arch-x86_64/Cargo.toml** (新建)
+```toml
+[package]
+name = "arch-x86_64"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hal = { path = "../crates/hal" }
+x86_64 = "0.14"
+spin = "0.9"
+```
+
+##### **arch-x86_64/src/lib.rs** (重写)
+实现三个核心组件:
+
+1. **Timer实现** - 基于TSC(Time Stamp Counter)或APIC Timer
+2. **IrqCtl实现** - 基于APIC (Advanced Programmable Interrupt Controller)
+3. **ContextSwitch实现** - 上下文切换(初期可简化)
+
+##### **arch-x86_64/src/timer.rs** (新建)
+```rust
+// 基于 APIC Timer 或 TSC + HPET 的时钟实现
+```
+
+##### **arch-x86_64/src/irq.rs** (新建)
+```rust
+// APIC 中断控制器封装
+```
+
+##### **arch-x86_64/src/idt.rs** (新建)
+```rust
+// IDT (Interrupt Descriptor Table) 设置
+```
+
+##### **arch-x86_64/src/gdt.rs** (新建)
+```rust
+// GDT (Global Descriptor Table) 设置
+```
+
+---
+
+#### 2️⃣ **在kernel中集成真实HAL**
+
+##### **kernel/Cargo.toml** (修改)
+```toml
+[dependencies]
+x86_64 = "0.14"
+spin = "0.9"
+uart_16550 = "0.2"
+volatile = "0.5"
+
+# 新增依赖
+hal = { path = "../crates/hal" }
+arch-x86_64 = { path = "../arch-x86_64" }
+scheduler = { path = "../crates/scheduler" }
+metrics = { path = "../crates/metrics" }
+heapless = "0.8"  # 用于无堆数据结构
+```
+
+##### **kernel/src/lib.rs** (修改)
+在`kstart()`中添加:
+```rust
+use hal::prelude::*;
+use arch_x86_64::{init_arch, get_hal};
+
+pub extern "C" fn kstart() -> ! {
+    init_serial();
+    banner();
+
+    // M2 新增: 初始化架构层
+    arch_x86_64::init_gdt();
+    arch_x86_64::init_idt();
+    
+    // 获取真实HAL实例
+    let hal = arch_x86_64::get_hal();
+    
+    // 启动时钟中断
+    hal.timer.schedule_tick_in(10); // 10ms tick
+    
+    // 启用中断
+    x86_64::instructions::interrupts::enable();
+    
+    kprintln!("RINT KERNEL: M2 init OK - HAL ready, timer ticking");
+    
+    // 主循环 - 等待中断驱动
+    loop {
+        x86_64::instructions::hlt();
+    }
+}
+```
+
+##### **kernel/src/interrupt.rs** (新建)
+```rust
+// 中断处理函数,在此调用调度器的tick()
+pub extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFrame) {
+    // 调用调度器tick
+    SCHEDULER.lock().tick();
+    
+    // 发送EOI (End Of Interrupt)
+    unsafe {
+        PICS.lock().notify_end_of_interrupt(TIMER_INTERRUPT_ID);
+    }
+}
+```
+
+---
+
+#### 3️⃣ **完善scheduler和metrics crates**
+
+##### **crates/scheduler/Cargo.toml** (修改)
+```toml
+[package]
+name = "scheduler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hal = { path = "../hal" }
+metrics = { path = "../metrics" }
+heapless = "0.8"
+```
+
+##### **crates/metrics/Cargo.toml** (修改)
+```toml
+[package]
+name = "metrics"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+heapless = "0.8"
+```
+
+##### **crates/metrics/src/lib.rs** (完善)
+实现`Recorder`结构,用于记录调度事件。
+
+---
+
+#### 4️⃣ **修改workspace配置**
+
+##### **Cargo.toml** (workspace根,修改)
+```toml
+[workspace]
+members = [
+    "kernel",
+    "crates/hal",
+    "crates/scheduler",
+    "crates/metrics",
+    "crates/sched-sim",
+    "arch-x86_64",
+    # "arch-riscv64",  # M5阶段再启用
+]
+resolver = "2"
+```
+
+---
+
+### 📚 需要掌握的核心知识
+
+#### **1. x86_64中断体系**
+- **GDT (Global Descriptor Table)**: 段描述符表,定义代码段/数据段
+- **IDT (Interrupt Descriptor Table)**: 中断描述符表,定义256个中断处理入口
+- **中断门 (Interrupt Gate)**: IDT表项,指向中断处理函数
+
+#### **2. x86_64时钟源**
+- **TSC (Time Stamp Counter)**: CPU内置计数器,`rdtsc`指令读取
+- **APIC Timer**: 本地APIC的可编程定时器
+- **HPET (High Precision Event Timer)**: 高精度事件定时器
+
+#### **3. APIC (Advanced Programmable Interrupt Controller)**
+- **Local APIC**: 每个CPU核心的本地中断控制器
+- **I/O APIC**: 外部设备中断路由
+- **EOI (End Of Interrupt)**: 中断结束信号
+
+#### **4. 中断处理流程**
+```
+硬件中断触发 → CPU查IDT → 保存上下文 → 
+调用处理函数 → 发送EOI → 恢复上下文 → 返回
+```
+
+#### **5. no_std环境编程**
+- 使用`heapless`替代`Vec`/`HashMap`(无堆分配)
+- 使用`spin::Mutex`替代`std::sync::Mutex`
+- 所有代码必须是`#![no_std]`兼容
+
+---
+
+### ⚠️ Profile警告问题解答
+
+你遇到的警告:
+```
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/lntrn1/rint-rust-kernel/kernel/Cargo.toml
+workspace: /home/lntrn1/rint-rust-kernel/Cargo.toml
+```
+
+**原因:**
+在Cargo workspace中,**profile配置只能在workspace根的Cargo.toml生效**,成员包(如kernel)的profile会被忽略。
+
+**解决方案:**
+
+#### **删除 kernel/Cargo.toml 中的profile配置**
+
+```toml name=kernel/Cargo.toml
+[package]
+name = "rint-kernel"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+authors = ["mackz-maxw <github.com/mackz-maxw>"]
+
+[dependencies]
+x86_64 = "0.14"
+spin = "0.9"
+uart_16550 = "0.2"
+volatile = "0.5"
+hal = { path = "../crates/hal" }
+arch-x86_64 = { path = "../arch-x86_64" }
+
+[lib]
+name = "rint_kernel"
+crate-type = ["rlib", "staticlib"]
+
+# ❌ 删除这些 profile 配置
+# [profile.dev]
+# panic = "abort"
+# ...
+```
+
+#### **在workspace根的Cargo.toml添加统一profile**
+
+```toml name=Cargo.toml
+[workspace]
+members = [
+    "kernel",
+    "crates/hal",
+    "crates/scheduler",
+    "crates/metrics",
+    "crates/sched-sim",
+    "arch-x86_64",
+]
+resolver = "2"
+
+# ✅ 在这里统一配置 profile
+[profile.dev]
+panic = "abort"
+lto = false
+opt-level = 0
+codegen-units = 16
+
+[profile.release]
+panic = "abort"
+lto = "thin"
+opt-level = "z"
+codegen-units = 1
+strip = true
+```
+
+---
+
+### 🗂️ M2阶段文件清单
+
+| 类型 | 文件路径 | 说明 |
+|------|---------|------|
+| **新建** | `arch-x86_64/Cargo.toml` | 架构层包配置 |
+| **重写** | `arch-x86_64/src/lib.rs` | 架构初始化入口 |
+| **新建** | `arch-x86_64/src/timer.rs` | Timer trait实现 |
+| **新建** | `arch-x86_64/src/irq.rs` | IrqCtl trait实现 |
+| **新建** | `arch-x86_64/src/idt.rs` | IDT表设置 |
+| **新建** | `arch-x86_64/src/gdt.rs` | GDT表设置 |
+| **新建** | `arch-x86_64/src/context.rs` | ContextSwitch实现 |
+| **修改** | `kernel/Cargo.toml` | 添加依赖,**删除profile** |
+| **修改** | `kernel/src/lib.rs` | 集成HAL,启动中断 |
+| **新建** | `kernel/src/interrupt.rs` | 中断处理函数 |
+| **修改** | `Cargo.toml` (workspace根) | **添加统一profile配置** |
+| **完善** | `crates/scheduler/src/joint.rs` | 调度器tick逻辑 |
+| **完善** | `crates/metrics/src/lib.rs` | 事件记录器 |
+
+---
+
+### ✅ M2验收标准
+
+运行 `bash scripts/qemu.sh` 后,应看到:
+```
+==============================
+ RINT Rust Microkernel (M2) 
+==============================
+RINT KERNEL: M2 init OK - HAL ready, timer ticking
+[Tick 0] Scheduler tick at 10ms
+[Tick 1] Scheduler tick at 20ms
+[Tick 2] Scheduler tick at 30ms
+...
+```
+
+---
+
+### 🔍 推荐开发顺序
+
+1. **先修复profile警告** (按上述方案修改Cargo.toml)
+2. **实现GDT/IDT** (参考osdev.org或《Operating Systems: Three Easy Pieces》)
+3. **实现APIC Timer** (可暂时使用PIT或简化的TSC)
+4. **编写中断处理函数** 
+5. **集成到kernel并测试**
+6. **完善scheduler与metrics**
+
 </details>
 
 
